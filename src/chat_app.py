@@ -29,6 +29,15 @@ async def on_chat_start():
         azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
     )
 
+    # llm = ChatOpenAI(
+    #     model="mistral-small3.1",
+    #     temperature=0,
+    #     streaming=True,
+    #     openai_api_key='test',
+    #     openai_api_base='<LLM_CONTAINER_APP_ENDPOINT>/v1/',
+    #     verbose=True,
+    # )
+    
     retriever = vector_store.as_retriever()
 
     retriever_tool = create_retriever_tool(
