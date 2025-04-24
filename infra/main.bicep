@@ -15,7 +15,7 @@ var openAIAccountName = 'openai-${uniqueString(resourceGroup().id)}'
 param azureOpenAILocation string = resourceGroup().location
 
 param sessionPoolLocation string = ''
-param containerAppsLocation string = 'Australia East'
+param containerAppsLocation string = 'West US 3'
 
 var trimmedResourceGroupLocation = trim(toLower(resourceGroup().location))
 var actualSessionPoolLocation = !empty(sessionPoolLocation) ? sessionPoolLocation : (trimmedResourceGroupLocation == 'australiaeast' || trimmedResourceGroupLocation == 'swedencentral' ? resourceGroup().location : 'North Central US')
@@ -186,7 +186,11 @@ resource env 'Microsoft.App/managedEnvironments@2024-02-02-preview' = {
     workloadProfiles: [
       {
         name: 'Consumption'
-         workloadProfileType: 'Consumption'
+        workloadProfileType: 'Consumption'
+      }
+      {
+        workloadProfileType: 'Consumption-GPU-NC8as-T4'
+        name: 'NC8as-T4'
       }
     ]
   }
