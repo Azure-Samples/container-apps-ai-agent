@@ -10,7 +10,7 @@ from langchain.agents import AgentExecutor
 from langchain.tools.retriever import create_retriever_tool
 from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
 from langchain_experimental.tools import PythonREPLTool
-from langchain_openai import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from common import vector_store
 from prompt import prompt
 
