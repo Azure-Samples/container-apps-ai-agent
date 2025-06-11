@@ -13,7 +13,7 @@ Password: **+++@lab.VirtualMachine(Win11-Pro-Base-VM).Password+++**
 
 ## Introduction
 
-In this hands-on lab, you'll learn how to use Azure Container Apps along with Azure OpenAI and Azure AI Search to build your very own AI agent or copilot.
+In this hands-on lab, you'll learn how to use Azure Container Apps along with Azure OpenAI and Azure AI Search to build your very own AI agent or copilot. Then, you'll deploy a large language model on serverless GPUs and use it in your agent.
 
 The agent is able to respond to natural language queries to:
 
@@ -41,6 +41,10 @@ By the end of the lab, you'll have learned to:
 
 * Deploy the PDF loader as an **Azure Container Apps job** that runs on a schedule
 
+* Deploy an LLM to a **serverless GPU container app**
+
+* Use LLM running on serverless GPUs in the agent
+
 You'll start by configuring your lab environment.
 
 ===
@@ -55,7 +59,7 @@ In this lab, you'll use the Azure CLI to interact with your Azure resources.
 
 1. Click the Windows Terminal icon on the task bar to open it.
 
-    !IMAGE[open-powershell.png](instructions275721/open-powershell.png)
+    !IMAGE[lab-open-powershell2.png](instructions292628/lab-open-powershell2.png)
 
     Windows Terminal with a PowerShell shell should open. Use this shell to execute all terminal commands in this lab.
     
@@ -69,7 +73,7 @@ In this lab, you'll use the Azure CLI to interact with your Azure resources.
 
 1. Ensure you're in PowerShell 7.x by checking the prompt. The tab title should say **PowerShell** (not *Windows PowerShell*).
 
-    !IMAGE[lab-powershell.png](instructions275721/lab-powershell.png)
+    !IMAGE[lab-powershell-751.png](instructions292628/lab-powershell-751.png)
 
 1. To log in to Azure, type the following Azure CLI command in the terminal and press *Enter*:
 
@@ -94,7 +98,7 @@ In this lab, you'll use the Azure CLI to interact with your Azure resources.
     - Username: **+++@lab.CloudPortalCredential(User1).Username+++**
     - Password: **+++@lab.CloudPortalCredential(User1).Password+++**
 
-1. When asked to "Stay signed in to all your apps", select **OK**, then **Done** to close the window.
+1. When asked to "Stay signed in to all your apps", select **Yes, all apps**, then **Done** to close the window.
 
     This minimizes the number of times in the lab you'll be asked to sign in.
 
@@ -126,14 +130,6 @@ When your lab VM and Azure subscription were initially created, some Azure resou
     ```
 
     !IMAGE[deployed-resources.png](instructions275721/deployed-resources.png)
-
-### Enable serverless GPU
-
-Later on in the lab, you'll get a chance to try Azure Container Apps' new serverless GPU feature. Enable the feature on your lab subscription by running this command:
-
-```powershell
-az feature register --namespace Microsoft.App --name ConsumptionGPUIgnite2024
-```
 
 ---
 
@@ -249,7 +245,7 @@ The project uses Poetry to create a Python virtual environment and install depen
 1. To activate a virtual environment, run the following command:
 
     ```powershell
-    poetry shell
+    Invoke-Expression (poetry env activate)
     ```
 
     You should see that the prompt now includes the name of the virtual environment. For example: _**(aca-ai-agent-py3.12)** PS C:\Users\LabUser\lab\src>_.
@@ -325,7 +321,7 @@ To respond to questions, the chat agent is able to query Azure AI Search for rel
     > 
     > 1. Open Windows Terminal again
     > 1. Change into the source folder: `cd ~\lab\src`
-    > 1. Activate the virtual environment: `poetry shell`
+    > 1. Activate the virtual environment: `Invoke-Expression (poetry env activate)`
 
 1. Run the job with the following command:
 
@@ -358,11 +354,10 @@ Now that the PDF files about Contoso have been loaded in AI Search, you can star
 
     It might take a few moments for the app to initialize and start up. Once it's started, it should open the chat UI in a browser tab.
 
-1. With the cursor in the chat message box, enter: `What kind of company is Contoso?`.
+1. With the cursor in the chat message box, enter: `What are some departments in Contoso?`.
 
     The agent should respond with information about Contoso. Other questions you can ask include:
 
-    * `What are some departments in Contoso?`
     * `What roles are in the Marketing department?`
     * `What does the VP of Marketing do?`
 
@@ -406,9 +401,9 @@ tools = [
     > 
     > 1. Open Windows Terminal again
     > 1. Change into the source folder: `cd ~\lab\src`
-    > 1. Activate the virtual environment: `poetry shell`
+    > 1. Activate the virtual environment: `Invoke-Expression (poetry env activate)`
 
-1. In the chat UI, enter `I just saw a lightning strike over Lake Michigan, and I heard the thunder 22 seconds later. How far away is the storm?`
+1. In the chat UI, enter `I just saw a lightning strike, then I heard the thunder 22 seconds later. How far away is the storm?`
 
     The agent should provide an accurate response. In the terminal, you can see the steps that were taken and the Python code that was generated and executed to provide the result.
 
@@ -418,8 +413,8 @@ tools = [
 
     Other questions you can try:
 
-    * `Assuming no air resistance, if I drop a penny from the height of the Sears Tower, how long does it take to reach the ground?`
-    * `The Chicago Cubs baseball team had a record of 83 wins and 79 losses this season. What was their winning percentage?`
+    * `Assuming no air resistance, if I drop a penny from the top of the Space Needle, how long does it take to reach the ground?`
+    * `The Seattle Seahawks American football team had a record of 10 wins and 7 losses last season. What was their winning percentage?`
 
 ### Ask questions about a CSV file
 
@@ -443,6 +438,7 @@ Next, you'll upload a CSV file containing customer sales data and ask questions 
 1. In the chat message box, ask more questions:
 
     * `What type of data is in the CSV file?`
+    * `Tell me something interesting about the data in the file`
     * `Who are the top 5 customers in total sales and what did they spend?`
     * `Who are the 3 least satisfied customers in the state of AZ?`
 
@@ -584,7 +580,7 @@ Because the job and app share a lot of code, you'll build them into a single con
 
 Because the deployed application uses the same Azure AI Search instance and Azure Container Apps dynamic sessions code interpreter pool as when you ran it locally, you should be able to ask the agent similar questions as you did earlier.
 
-### Index another PDF file
+### Index another PDF file (optional)
 
 You can add PDF files to a file share that the job will add to the search index.
 
@@ -618,54 +614,67 @@ You can add PDF files to a file share that the job will add to the search index.
 
 ===
 
-## Bonus: Deploy a serverless GPU app
+## Deploy an LLM to a serverless GPU container app
 
-Now, you'll get a chance to try out the new serverless GPU support in Azure Container Apps! You'll deploy an app that uses a local Stable Diffusion model to generate images with a GPU.
+So far, the agent uses an LLM hosted on Azure OpenAI. You can deploy your own LLMs to Azure Container Apps using serverless GPUs. This is useful if you want to run a specific model or a model you've fine-tuned yourself. 
 
-1. Before you begin, check that the serverless GPU feature has been enabled on your lab subscription by running this command in Windows Terminal:
+You run container apps and jobs on serverless GPUs by deploying them on a consumption GPU workload profile. They support scale to zero and you're only billed when your app or job is running.
 
-    ```powershell
-    az feature show --namespace Microsoft.App --name ConsumptionGPUIgnite2024
-    ```
+To deploy an LLM, you'll use a container running Ollama. Ollama makes it easy to run LLMs on your local machine or in a container. To save time, in this lab, you'll use a container image that has already been built and hosted on a public registry. If you want to see how the image was built, see the [Dockerfile](https://github.com/Azure-Samples/container-apps-ai-agent/blob/main/serverless-gpus/Dockerfile).
 
-    Confirm that the *state* is **Registered**.
-
-    > [+NOTE]
-    > If you didn't register the feature earlier...
-    > 
-    > Run the following command. It'll take a few minutes for the registration to complete:
-    >
-    > ```powershell
-    > az feature register --namespace Microsoft.App --name ConsumptionGPUIgnite2024 --no-wait
-    > ```
-
-1. To use serverless GPU, enable a consumption GPU workload profile in your Container Apps environment by running this command:
+1. Back in the terminal, create a container app named *llm* using a consumption GPU workload profile:
 
     ```powershell
-    az rest -m PATCH -u "/subscriptions/@lab.CloudSubscription.Id/resourceGroups/@lab.CloudResourceGroup(ResourceGroup1).Name/providers/Microsoft.App/managedEnvironments/cae-lab-env?api-version=2024-10-02-preview" --body '{\"properties\": {\"workloadProfiles\": [{\"workloadProfileType\": \"Consumption\", \"name\": \"Consumption\"}, {\"workloadProfileType\": \"Consumption-GPU-NC8as-T4\", \"name\": \"NC8as-T4\"}]}}'
+    az containerapp create -g @lab.CloudResourceGroup(ResourceGroup1).Name -n llm --environment cae-lab-env --image acabuild2025.azurecr.io/lab:mistral-small3.1 --cpu 8 --memory 56Gi --ingress external --target-port 11434 -w NC8as-T4 --min-replicas 0 --max-replicas 1 -o table
     ```
 
-    > [!NOTE]
-    > Support for managing GPU workload profiles using the built-in "az containerapp env workload-profile add" command is coming soon to the Azure CLI. Until then, the above command adds the GPU workload profile using Azure's REST API.
+    When the app is created, the container app's endpoint URL is printed on in the terminal. Hold *Ctrl* and click the link to open it.
 
-1. Next, create a container app using the GPU workload profile:
+1. Open the URL in a browser to confirm it is working (hold *Ctrl* and click the link to open it. It might take a minute for the app to start.
 
-    ```powershell
-    az containerapp create -g @lab.CloudResourceGroup(ResourceGroup1).Name -n lab-stable-diffusion --environment cae-lab-env --image serverlessgpu.azurecr.io/gpu-quickstart:latest --cpu 4 --memory 48Gi --ingress external --target-port 80 -w NC8as-T4 --min-replicas 1 --max-replicas 1 -o table
+	If the app is deployed correctly, you'll see *Ollama is running* in the response. You may need to refresh the page to see it.
+
+1. In VS Code, open *chat_app.py*. Locate the following code block and uncomment it (highlight the lines and press *Ctrl-/*):
+
+	```python
+    llm = ChatOpenAI(
+        model="mistral-small3.1",
+        temperature=0,
+        streaming=True,
+        openai_api_key='test',
+        openai_api_base='<LLM_CONTAINER_APP_ENDPOINT>/v1/',
+        verbose=True,
+    )
     ```
 
-    When the app is created, a URL is printed on in the terminal.
+    Ollama exposes OpenAI compatible endpoints for the LLM. The above code uses the standard OpenAI LangChain integration to connect to the LLM running in the container app.
 
-1.  Open the URL in a browser. It might take a minute for the app to start. Enter a prompt and an image will be generated.
+1. In the code you uncommented, replace `<LLM_CONTAINER_APP_ENDPOINT>` with the container app endpoint. It should look like this:
 
-    !IMAGE[lab-gpu-demo.png](instructions275721/lab-gpu-demo.png)
+	```nocopy
+    openai_api_base='https://llm.wittycoast-14bb66cf.westus3.azurecontainerapps.io/v1/',
+    ```
+
+	!IMAGE[lab-vscode-screenshot.png](instructions292628/lab-vscode-screenshot.png)
+
+1. Save the file.
+
+1. Start your app locally with the following command:
+
+	```powershell
+	chainlit run chat_app.py
+    ```
+
+1. Try asking the agent similar questions as you did before. You should see similar results.
+2. 
+	*  `I just saw a lightning strike, then I heard the thunder 22 seconds later. How far away is the storm?`
 
 ===
 
 ## Wrap up
 
-In this lab, you learned how to build your very own chat agent that can query data in Azure AI Search and perform complex calculations and file processing using a Python code interpreter in Azure Container Apps dynamic sessions.
+In this lab, you learned how to build your very own chat agent that can query data in Azure AI Search and perform complex calculations and file processing using a Python code interpreter in Azure Container Apps dynamic sessions. You then ran an LLM on a container app powered by serverless GPUs and used it from your agent.
 
 The source code for the lab is here: @lab.Variable(RepoUrl)
 
-Thanks for joining us and enjoy the rest of Microsoft Ignite!
+Thanks for joining us and enjoy the rest of Microsoft Build!
