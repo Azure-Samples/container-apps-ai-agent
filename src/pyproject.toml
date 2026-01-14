@@ -10,7 +10,7 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.11"
 langchain = "^0.2.14"
-chainlit = "^1.1.402"
+chainlit = "^2.8.5"
 python-dotenv = "^1.0.1"
 langchain-azure-dynamic-sessions = "^0.1.0"
 azure-identity = "^1.17.1"
