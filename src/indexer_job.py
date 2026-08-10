@@ -4,7 +4,7 @@ import time
 from langchain_community.document_loaders.pdf import PyMuPDFLoader
 from langchain_text_splitters import CharacterTextSplitter
 
-from common import vector_store
+from common import vector_store, sanitize_for_react
 
 dir = os.environ.get("PDF_DIR", os.path.join(os.path.dirname(__file__), "sample-data"))
 
@@ -20,6 +20,9 @@ for pdf_file_name in os.listdir(dir):
 
     loader = PyMuPDFLoader(file_path=pdf_file_path)
     docs = loader.load_and_split(text_splitter=text_splitter)
+
+    for doc in docs:
+        doc.page_content = sanitize_for_react(doc.page_content)
 
     print(f"{pdf_file_path}: {len(docs)}")
 
