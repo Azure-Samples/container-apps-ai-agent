@@ -9,9 +9,8 @@ from langchain import hub
 from langchain.agents import AgentExecutor
 from langchain.tools.retriever import create_retriever_tool
 from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
-from langchain_experimental.tools import PythonREPLTool
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
-from common import vector_store
+from common import vector_store, sanitize_for_react
 from prompt import prompt
 
 dotenv.load_dotenv()
@@ -40,13 +39,22 @@ async def on_chat_start():
     
     retriever = vector_store.as_retriever()
 
-    retriever_tool = create_retriever_tool(
+    _base_retriever_tool = create_retriever_tool(
         retriever,
         "search_documents",
         "Searches and returns excerpts from documents that contain useful information.",
     )
 
-    code_interpreter_tool = PythonREPLTool()
+    # Defense-in-depth: sanitize retrieved content so that ReAct control tokens
+    # embedded in indexed documents cannot hijack the agent scratchpad.
+    def _sanitized_retriever(query: str) -> str:
+        return sanitize_for_react(_base_retriever_tool.func(query))
+
+    retriever_tool = _base_retriever_tool.copy(update={"func": _sanitized_retriever})
+
+    code_interpreter_tool = SessionsPythonREPLTool(
+        pool_management_endpoint=os.environ["POOL_MANAGEMENT_ENDPOINT"],
+    )
     code_interpreter_tool.description += " To see the result, you MUST use the `print` function."
 
     tools = [

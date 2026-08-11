@@ -1,9 +1,24 @@
 import os
+import re
 from langchain_community.vectorstores.azuresearch import AzureSearch
 from langchain_openai import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from azure.identity import get_bearer_token_provider, DefaultAzureCredential
 from azure.search.documents.indexes import SearchIndexClient
 from dotenv import load_dotenv
+
+# ReAct control tokens that, if present in retrieved document text, allow a
+# malicious document to hijack the agent's next reasoning step (indirect
+# prompt injection).  Neutralise them by inserting a zero-width space so the
+# LLM no longer parses them as structural markers.
+_REACT_TOKEN_RE = re.compile(
+    r"^(Thought|Action(?: Input)?|Observation|Final Answer)\s*:",
+    re.MULTILINE | re.IGNORECASE,
+)
+
+
+def sanitize_for_react(text: str) -> str:
+    """Escape ReAct control tokens in untrusted text before it enters the agent scratchpad."""
+    return _REACT_TOKEN_RE.sub(lambda m: m.group(0)[0] + "\u200b" + m.group(0)[1:], text)
 
 load_dotenv()
 
